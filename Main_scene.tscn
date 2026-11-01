@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://b2ltmxy5f2tkl"]
+
+[ext_resource type="SpriteFrames" path="res://assets/litten/litten_frames.tres" id="1_frames"]
+[ext_resource type="Script" uid="uid://eavthm4dxj3r" path="res://main_scene.gd" id="2_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
+size = Vector2(256, 320)
+
+[node name="MainScene" type="Node2D" unique_id=1482869989]
+script = ExtResource("2_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=764822275]
+texture_filter = 1
+position = Vector2(128, 160)
+scale = Vector2(8, 8)
+sprite_frames = ExtResource("1_frames")
+animation = &"Walk_Right"
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1122960129]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1615956792]
+position = Vector2(128, 160)
+shape = SubResource("RectangleShape2D_hitbox")
