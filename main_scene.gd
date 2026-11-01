@@ -4,18 +4,19 @@ const DIRECTIONS: Array[String] = ["Right", "DownRight", "Down", "DownLeft", "Le
 const CRY_PATH := "res://assets/litten/sounds/litten_cry.ogg"
 const HEART_TEXTURE := "res://assets/litten/fx/heart.png"
 const SAVE_PATH := "user://pet_state.cfg"
-const CLICK_MENU_DELAY := 0.45
+const CLICK_MENU_DELAY := 0.3
+const DRAG_THRESHOLD := 8.0
 const BASE_SPRITE_SCALE := 6.5
 const MIN_PET_SCALE := 0.65
 const MAX_PET_SCALE := 1.15
 const HOVER_SCALE := 1.06
 const SPEECH_LINES: Array[String] = [
 	"¡Miau!",
-	"¿Jugamos?",
-	"Tengo hambre...",
-	"Te quiero",
-	"¿Qué haces?",
-	"¡Hola!",
+	"¿let's play?",
+	"I'm hungry...",
+	"I love you",
+	"¿what are you doing?",
+	"¡Hello!",
 ]
 
 var speed = 300.0
@@ -26,6 +27,7 @@ var screen_size = Vector2()
 var window_size = Vector2.ZERO
 
 var is_dragging = false
+var drag_moved := false
 var drag_offset = Vector2()
 var drag_start_mouse = Vector2.ZERO
 var is_asleep := false
@@ -268,6 +270,12 @@ func _emit_hearts() -> void:
 func _physics_process(delta: float) -> void:
 	if is_dragging:
 		var mouse_pos = Vector2(DisplayServer.mouse_get_position())
+		# No mover la ventana hasta pasar el umbral: así un click normal nunca se convierte en arrastre.
+		if not drag_moved:
+			if mouse_pos.distance_to(drag_start_mouse) < DRAG_THRESHOLD:
+				return
+			drag_moved = true
+			last_drag_mouse = mouse_pos
 		var instant_velocity: Vector2 = (mouse_pos - last_drag_mouse) / maxf(delta, 0.001)
 		drag_velocity = drag_velocity.lerp(instant_velocity, 0.35)
 		if mouse_pos.distance_to(last_drag_mouse) < 0.5:
@@ -522,6 +530,27 @@ func _direction_name(dir: Vector2) -> String:
 		idx += 8
 	return DIRECTIONS[idx]
 
+# El release del click izquierdo se maneja aquí (no en el Area2D), para que
+# siempre se detecte aunque la ventana se mueva y el mouse salga del área.
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed):
+		return
+	if suppress_menu_release:
+		suppress_menu_release = false
+		is_dragging = false
+		drag_velocity = Vector2.ZERO
+		return
+	if not is_dragging:
+		return
+	is_dragging = false
+	if not drag_moved:
+		_schedule_menu(event.position)
+	elif drag_velocity.length() > 250.0:
+		_start_throw(drag_velocity)
+	else:
+		drag_velocity = Vector2.ZERO
+		_save_state()
+
 func _on_area_input(_viewport, event, _shape_idx):
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -543,6 +572,7 @@ func _on_area_input(_viewport, event, _shape_idx):
 				click_timer.stop()
 				suppress_menu_release = true
 				is_dragging = false
+				drag_moved = false
 				drag_velocity = Vector2.ZERO
 				_play_cry()
 				_emit_hearts()
@@ -551,22 +581,9 @@ func _on_area_input(_viewport, event, _shape_idx):
 			pending_menu = false
 			click_timer.stop()
 			is_dragging = true
+			drag_moved = false
 			drag_velocity = Vector2.ZERO
 			drag_start_mouse = Vector2(DisplayServer.mouse_get_position())
 			last_drag_mouse = drag_start_mouse
 			var win_pos = Vector2(DisplayServer.window_get_position())
 			drag_offset = drag_start_mouse - win_pos
-		else:
-			var was_dragging: bool = is_dragging
-			is_dragging = false
-			if suppress_menu_release:
-				suppress_menu_release = false
-				return
-			var mouse_pos = Vector2(DisplayServer.mouse_get_position())
-			if mouse_pos.distance_to(drag_start_mouse) < 4.0:
-				_schedule_menu(event.position)
-			elif was_dragging and drag_velocity.length() > 250.0:
-				_start_throw(drag_velocity)
-			else:
-				drag_velocity = Vector2.ZERO
-				_save_state()
