@@ -3,7 +3,6 @@
 [ext_resource type="Texture2D" path="res://assets/litten/sprite/Idle-Anim.png" id="1_75ym5"]
 [ext_resource type="Texture2D" path="res://assets/litten/sprite/EventSleep-Anim.png" id="1_amm43"]
 [ext_resource type="Texture2D" path="res://assets/litten/sprite/Sleep-Anim-Padded.png" id="2_66p1w"]
-[ext_resource type="Texture2D" path="res://assets/litten/sprite/Sit-Anim.png" id="2_amm43"]
 [ext_resource type="Texture2D" path="res://assets/litten/sprite/Pose-Anim.png" id="5_pose"]
 [ext_resource type="Texture2D" path="res://assets/litten/sprite/Wake-Anim.png" id="3_amm43"]
 [ext_resource type="Texture2D" path="res://assets/litten/sprite/Walk-Anim.png" id="4_7buh8"]
@@ -199,18 +198,6 @@ region = Rect2(48, 72, 24, 24)
 [sub_resource type="AtlasTexture" id="AtlasTexture_sk7fj"]
 atlas = ExtResource("1_75ym5")
 region = Rect2(72, 72, 24, 24)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_7buh8"]
-atlas = ExtResource("2_amm43")
-region = Rect2(0, 0, 24, 24)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_a6sbb"]
-atlas = ExtResource("2_amm43")
-region = Rect2(24, 0, 24, 24)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_vvevo"]
-atlas = ExtResource("2_amm43")
-region = Rect2(48, 0, 24, 24)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vlsxa"]
 atlas = ExtResource("2_66p1w")
@@ -1008,14 +995,6 @@ animations = [{
 }],
 "loop": 1,
 "name": &"Idle_UpRight",
-"speed": 6.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_a6sbb")
-}],
-"loop": 1,
-"name": &"Sit",
 "speed": 6.0
 }, {
 "frames": [{

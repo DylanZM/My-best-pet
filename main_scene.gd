@@ -12,18 +12,11 @@ var window_size = Vector2.ZERO
 var is_dragging = false
 var drag_offset = Vector2()
 var drag_start_mouse = Vector2.ZERO
-var is_asleep := true
+var is_asleep := false
 var is_waking := false
 var is_falling_asleep := false
-var is_sitting := false
 var is_posing := false
-var manual_sleep := false
 var is_menu_open := false
-var mouse_initialized := false
-var startup_time := 0.0
-var hover_rect = Rect2()
-var last_mouse = Vector2.ZERO
-var still_time = 0.0
 
 var menu: PopupMenu
 
@@ -33,7 +26,6 @@ var polled_mouse := Vector2.ZERO
 var polled_valid := false
 var poll_running := true
 
-
 @onready var animated_sprite = $AnimatedSprite2D
 @onready var area = $Area2D
 
@@ -42,22 +34,15 @@ func _ready():
 	window_size = Vector2(DisplayServer.window_get_size())
 	area.input_event.connect(_on_area_input)
 	animated_sprite.animation_finished.connect(_on_animation_finished)
-	animated_sprite.play("Sleep")
+	animated_sprite.play("Idle_Left")
 
 	menu = PopupMenu.new()
-	menu.add_item("Sentarse", 1)
-	menu.add_item("Pose", 2)
-	menu.add_item("Levantarse", 3)
-	menu.add_item("Dormir", 4)
-	menu.add_item("Despertar", 5)
+	menu.add_item("Pose", 1)
+	menu.add_item("Dormir", 2)
+	menu.add_item("Despertar", 3)
 	menu.id_pressed.connect(_on_menu_id_pressed)
 	menu.popup_hide.connect(_on_menu_closed)
 	add_child(menu)
-
-	var frame_size = Vector2(32, 40)
-	var body_local = Rect2(4, 3, 24, 24)
-	var frame_origin = (window_size - frame_size * animated_sprite.scale) / 2
-	hover_rect = Rect2(frame_origin + body_local.position * animated_sprite.scale, body_local.size * animated_sprite.scale)
 
 	cursor_thread = Thread.new()
 	cursor_thread.start(_poll_cursor)
@@ -98,66 +83,14 @@ func _physics_process(delta: float) -> void:
 	if is_menu_open:
 		return
 
+	if is_asleep or is_waking or is_falling_asleep or is_posing:
+		return
+
 	var mouse = _mouse_position()
 	var window_position = Vector2(DisplayServer.window_get_position())
-	var hovering = hover_rect.has_point(mouse - window_position)
-	var pet_center = window_position + hover_rect.get_center()
+	var pet_center = window_position + window_size / 2.0
 	var to_mouse = mouse - pet_center
 	var distance = to_mouse.length()
-	var cursor_still = mouse.distance_squared_to(last_mouse) <= 1.0
-	var at_cursor = distance <= 6.0
-
-	if not mouse_initialized:
-		startup_time += delta
-		last_mouse = mouse
-		if startup_time > 0.5:
-			mouse_initialized = true
-		return
-
-	if is_asleep:
-		last_mouse = mouse
-		if not cursor_still and not manual_sleep:
-			is_asleep = false
-			is_waking = true
-			speed = 0.0
-			still_time = 0.0
-			is_sitting = false
-			is_posing = false
-			_play("Wake_Left")
-		return
-
-	if is_waking or is_falling_asleep:
-		last_mouse = mouse
-		return
-
-	if is_posing:
-		last_mouse = mouse
-		return
-
-	if is_sitting:
-		speed = 0.0
-		_play("Sit")
-		last_mouse = mouse
-		return
-
-	if hovering and at_cursor and cursor_still:
-		still_time += delta
-	else:
-		still_time = 0.0
-	last_mouse = mouse
-
-	if hovering and at_cursor and cursor_still and still_time > 0.25:
-		manual_sleep = false
-		is_falling_asleep = true
-		speed = 0.0
-		facing = "Left"
-		_play("Sleep_Start_Left")
-		return
-
-	if hovering and at_cursor and cursor_still:
-		speed = 0.0
-		_play("Idle_" + facing)
-		return
 
 	direction = to_mouse.normalized()
 	if distance > 4.0:
@@ -210,60 +143,28 @@ func _on_menu_closed() -> void:
 func _on_menu_id_pressed(id: int) -> void:
 	match id:
 		1:
-			manual_sleep = false
 			is_asleep = false
 			is_waking = false
 			is_falling_asleep = false
-			is_posing = false
-			is_sitting = true
-			speed = 0.0
-			still_time = 0.0
-			_play("Sit")
-		2:
-			manual_sleep = false
-			is_asleep = false
-			is_waking = false
-			is_falling_asleep = false
-			is_sitting = false
 			is_posing = true
 			facing = "Down"
 			speed = 0.0
-			still_time = 0.0
 			_play("Pose_Down")
-		3:
-			manual_sleep = false
-			is_sitting = false
-			is_posing = false
-			is_falling_asleep = false
-			speed = 0.0
-			still_time = 0.0
-			if is_asleep:
-				is_asleep = false
-				is_waking = true
-				_play("Wake_Left")
-			else:
-				is_waking = false
-				_play("Idle_" + facing)
-		4:
-			manual_sleep = true
-			is_sitting = false
-			is_posing = false
+		2:
 			if not is_asleep and not is_falling_asleep:
+				is_posing = false
 				is_waking = false
 				is_falling_asleep = true
 				speed = 0.0
 				facing = "Left"
 				_play("Sleep_Start_Left")
-		5:
-			manual_sleep = false
+		3:
 			if is_asleep or is_falling_asleep:
 				is_asleep = false
 				is_falling_asleep = false
-				is_sitting = false
 				is_posing = false
 				is_waking = true
 				speed = 0.0
-				still_time = -1.5
 				_play("Wake_Left")
 
 func _direction_name(dir: Vector2) -> String:
