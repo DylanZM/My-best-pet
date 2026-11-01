@@ -8,6 +8,11 @@ size = Vector2(256, 320)
 
 [node name="MainScene" type="Node2D" unique_id=1482869989]
 script = ExtResource("2_script")
+speed = null
+follow_speed = null
+follow_cursor = null
+autonomous_movement = null
+sleep_after = null
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=764822275]
 texture_filter = 1
