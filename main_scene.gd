@@ -35,14 +35,19 @@ func _physics_process(delta: float) -> void:
 	var mouse = Vector2(DisplayServer.mouse_get_position())
 	var window_position = Vector2(DisplayServer.window_get_position())
 	var hovering = hover_rect.has_point(mouse - window_position)
+	var pet_center = window_position + hover_rect.get_center()
+	var to_mouse = mouse - pet_center
+	var distance = to_mouse.length()
+	var cursor_still = mouse.distance_squared_to(last_mouse) <= 1.0
+	var at_cursor = distance <= 6.0
 
-	if hovering and mouse == last_mouse:
+	if hovering and at_cursor and cursor_still:
 		still_time += delta
 	else:
 		still_time = 0.0
 	last_mouse = mouse
 
-	var should_sleep = hovering and still_time > 0.3
+	var should_sleep = hovering and at_cursor and cursor_still and still_time > 0.25
 
 	if should_sleep != is_asleep:
 		is_asleep = should_sleep
@@ -55,11 +60,15 @@ func _physics_process(delta: float) -> void:
 	if is_asleep:
 		return
 
-	var pet_center = window_position + hover_rect.get_center()
-	var to_mouse = mouse - pet_center
+	if hovering and at_cursor and cursor_still:
+		speed = 0.0
+		if animated_sprite.animation != "Idle":
+			animated_sprite.play("Idle")
+		return
+
 	direction = to_mouse.normalized()
 
-	if to_mouse.length() > 4.0:
+	if distance > 4.0:
 		speed = 300.0
 		animated_sprite.flip_h = direction.x < 0
 		if animated_sprite.animation != "Walk_Right":
